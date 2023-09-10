@@ -99,7 +99,11 @@ describe Application do
 
           it 'shows admin dashboard', :aggregate_failures do
             expect(view.title).to eq('Administrator dashboard')
-            expect(view.content).to eq('mark@liamtoh.com, Mark, Baumweg 13, 3001 Bern, CH')
+            expected_content = <<~USERS
+              mark@liamtoh.com:
+                Mark, Baumweg 13, 3001 Bern, CH
+            USERS
+            expect(view.content).to eq(expected_content.strip)
           end
         end
       end
@@ -144,8 +148,10 @@ describe Application do
         expect(view.title).to eq('Administrator dashboard')
 
         expected_content = <<~USERS
-          jeremy@liamtoh.com, Jeremy, Obere Matte 2, 70173 Stuttgart, DE
-          susanne@liamtoh.com, Susanne, Alpweg 332, 8000 Zürich, CH
+          jeremy@liamtoh.com:
+            Jeremy, Obere Matte 2, 70173 Stuttgart, DE
+          susanne@liamtoh.com:
+            Susanne, Alpweg 332, 8000 Zürich, CH
         USERS
         expect(view.content).to eq(expected_content.strip)
       end
@@ -272,7 +278,12 @@ describe Application do
 
         it 'shows admin dashboard with updated user info', :aggregate_failures do
           expect(view.title).to eq('Administrator dashboard')
-          expect(view.content).to eq('john@liamtoh.com, Johnny, 12 Bow Lane, BD12 4LL Bradford, UK')
+          expected_content = <<~USERS
+            john@liamtoh.com:
+              John, 12 Bow Lane, BD12 4LL Bradford, UK
+              Johnny, 12 Bow Lane, BD12 4LL Bradford, UK
+          USERS
+          expect(view.content).to eq(expected_content.strip)
         end
       end
     end
@@ -302,7 +313,55 @@ describe Application do
 
         it 'shows admin dashboard with updated user info', :aggregate_failures do
           expect(view.title).to eq('Administrator dashboard')
-          expect(view.content).to eq('john@liamtoh.com, John, 113c Upper Street, NX1 1LY Norwich, UK')
+          expected_content = <<~USERS
+            john@liamtoh.com:
+              John, 12 Bow Lane, BD12 4LL Bradford, UK
+              John, 113c Upper Street, NX1 1LY Norwich, UK
+          USERS
+          expect(view.content).to eq(expected_content.strip)
+        end
+      end
+    end
+
+    context 'when user changes address and name several times' do
+      before do
+        view_driver.show_profile
+        view_driver.change_address_to(street: '113c Upper Street', zip: 'NX1 1LY', city: 'Norwich', country: 'UK')
+        view_driver.change_address_to(street: '113c Upper Road', zip: 'NX1 1LY', city: 'Norwich', country: 'UK')
+        view_driver.change_name_to('Johnny')
+        view_driver.change_address_to(street: '12 Llyelyn Road', zip: 'CF10 2GP', city: 'Cardiff', country: 'UK')
+        view_driver.change_name_to('John')
+      end
+
+      it 'updates profile', :aggregate_failures do
+        expect(view.title).to eq("John's profile")
+        expected_profile = <<~PROFILE
+          Name: John
+          EMail: john@liamtoh.com
+          Address: 12 Llyelyn Road, CF10 2GP Cardiff
+          Country: UK
+        PROFILE
+        expect(view.content).to eq(expected_profile)
+      end
+
+      context 'when admin user logs in' do
+        before do
+          view_driver.logout
+          view_driver.login_admin
+        end
+
+        it 'shows admin dashboard with updated user info', :aggregate_failures do
+          expect(view.title).to eq('Administrator dashboard')
+          expected_content = <<~USERS
+            john@liamtoh.com:
+              John, 12 Bow Lane, BD12 4LL Bradford, UK
+              John, 113c Upper Street, NX1 1LY Norwich, UK
+              John, 113c Upper Road, NX1 1LY Norwich, UK
+              Johnny, 113c Upper Road, NX1 1LY Norwich, UK
+              Johnny, 12 Llyelyn Road, CF10 2GP Cardiff, UK
+              John, 12 Llyelyn Road, CF10 2GP Cardiff, UK
+          USERS
+          expect(view.content).to eq(expected_content.strip)
         end
       end
     end
