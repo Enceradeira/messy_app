@@ -3,7 +3,7 @@
 class CurrencyHelper
   class << self
     def find_currency(user)
-      case user.person.address.country
+      case user.person.address.address_attributes.where(valid_from: ..Date.today).order(valid_from: :asc).last.country
       when 'CH'
         'CHF'
       when 'DE'

@@ -1,7 +1,10 @@
 # frozen_string_literal: true
 
 class InvestmentFeesView < View
-  def title = "#{@user.person.name}'s fees (in #{currency})"
+  def title
+    name = @user.person.person_attributes.where(valid_from: ..Date.today).order(valid_from: :asc).last.name
+    "#{name}'s fees (in #{currency})"
+  end
 
   def content
     if @fees.positive?

@@ -2,14 +2,14 @@
 
 class AccountingController < ApplicationController
   def show(*)
-    holdings = Security.joins(user: { person: :address })
-                       .group('addresses.country', 'securities.ticker')
+    holdings = Security.joins(user: { person: { address: :address_attributes } })
+                       .group('address_attributes.country', 'securities.ticker')
                        .sum('securities.quantity')
 
     evaluated_holdings = holdings.map do |(country, ticker), quantity|
       fee_dollar = StockApi.get_share_price(ticker, Date.today) * quantity * Constants::FEE_RATE
 
-      user = Address.find_by(country:).person.user
+      user = AddressAttribute.find_by(country:).address.person.user
       currency = CurrencyHelper.find_currency(user)
       rate = CurrencyExchangeApi.find_conversion_rate('USD', currency, Date.today)
       fee_currency = fee_dollar * rate

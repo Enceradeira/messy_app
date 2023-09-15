@@ -1,13 +1,17 @@
 # frozen_string_literal: true
 
 class ProfileView < View
-  def title = "#{@user.person.name}'s profile"
+  def title
+    "#{name}'s profile"
+  end
 
   def content
     person = @user.person
-    address = person.address
+    address = person.address.address_attributes
+                    .where(valid_from: ..Date.today)
+                    .order(valid_from: :desc).first
     <<~PROFILE
-      Name: #{person.name}
+      Name: #{name}
       EMail: #{@user.email}
       Address: #{address.street}, #{address.zip} #{address.city}
       Country: #{address.country}
@@ -32,5 +36,11 @@ class ProfileView < View
 
   def show_investment_fees
     controller.show_investment_fees(user_id: @user.id)
+  end
+
+  def name
+    @user.person.person_attributes
+         .where(valid_from: ..Date.today)
+         .order(valid_from: :desc).first.name
   end
 end
