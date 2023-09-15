@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
 class ProfileView < View
-  def title = "#{@user.person.name}'s profile"
+  def title = "#{@user.person.person_attributes.order(id: :desc).first.name}'s profile"
 
   def content
     person = @user.person
-    address = person.address
+    address = person.address.address_attributes.order(id: :desc).first
     <<~PROFILE
-      Name: #{person.name}
+      Name: #{person.person_attributes.order(id: :desc).first.name}
       EMail: #{@user.email}
       Address: #{address.street}, #{address.zip} #{address.city}
       Country: #{address.country}

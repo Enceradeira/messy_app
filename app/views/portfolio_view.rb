@@ -2,14 +2,15 @@
 
 class PortfolioView < View
   # view content
-  def title = "#{@user.person.name}'s portfolio"
+  def title = "#{@user.person.person_attributes.order(id: :desc).first.name}'s portfolio"
 
   def content
     currency = CurrencyHelper.find_currency(@user)
+    name = @user.person.person_attributes.order(id: :desc).first.name
     if @portfolio_value.positive?
-      "#{@user.person.name}, your portfolio is worth #{format('%.2f', @portfolio_value)} #{currency}"
+      "#{name}, your portfolio is worth #{format('%.2f', @portfolio_value)} #{currency}"
     else
-      "#{@user.person.name}, your portfolio is worth nothing"
+      "#{name}, your portfolio is worth nothing"
     end
   end
 

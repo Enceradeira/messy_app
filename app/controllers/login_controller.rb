@@ -16,9 +16,11 @@ class LoginController < ApplicationController
   end
 
   def signup(email:, password:, passcode:, name:, street:, zip:, city:, country:) # rubocop:disable Metrics/ParameterLists
-    address = Address.new(street:, city:, zip:, country:)
-    person = Person.new(name:, address:)
-    @user  = User.new(email:, password:, person:)
+    address = Address.new
+    address.address_attributes.build(street:, city:, zip:, country:)
+    person = Person.new(address:)
+    person.person_attributes.build(name:)
+    @user = User.new(email:, password:, person:)
 
     if passcode.present?
       passcode = Passcode.find_by(name:, street:, zip:, city:, country:, passcode: passcode.to_i)
