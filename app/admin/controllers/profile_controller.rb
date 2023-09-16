@@ -11,16 +11,13 @@ module Admin
 
     def change_name_to(user_id:, name:)
       change_user(user_id) do |user|
-        user.person.name = name
+        user.person.person_attributes.build(name:)
       end
     end
 
     def change_address_to(user_id:, street:, zip:, city:, country:)
       change_user(user_id) do |user|
-        user.person.address.street = street
-        user.person.address.zip = zip
-        user.person.address.city = city
-        user.person.address.country = country
+        user.person.address.address_attributes.build(street:, city:, zip:, country:)
       end
     end
 
