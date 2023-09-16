@@ -2,16 +2,14 @@
 
 module Admin
   class ProfileView < View
-    def title = "#{@user.person.name}'s profile"
+    def title = "#{@user.name}'s profile"
 
     def content
-      person = @user.person
-      address = person.address
       <<~PROFILE
-        Name: #{person.name}
+        Name: #{@user.name}
         EMail: #{@user.email}
-        Address: #{address.street}, #{address.zip} #{address.city}
-        Country: #{address.country}
+        Address: #{@user.street}, #{@user.zip} #{@user.city}
+        Country: #{@user.country}
       PROFILE
     end
 

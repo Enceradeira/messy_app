@@ -2,9 +2,14 @@
 
 module Admin
   class Repository
-    UserDTO = Data.define(:id, :name, :country)
+    # A default Admin. Doesn't have a person associated.
+    DefaultUserData = Data.define(:id, :email, :admin?)
+    # A User or Admin. Does have a person associated.
+    UserData = Data.define(:id, :email, :name, :admin?, :street, :zip, :city, :country)
+    # The Base-Query to fetchint a User with its Person and Address.
+    UserDataQuery = User.includes(person: :address)
 
-    private_constant :UserDTO
+    private_constant :UserData, :DefaultUserData, :UserDataQuery
 
     class << self
       def seed_data
@@ -12,8 +17,49 @@ module Admin
       end
 
       def find_user(user_id)
-        user = User.includes(person: :address).find(user_id)
-        UserDTO.new(id: user_id, name: user.person.name, country: user.person.address.country)
+        user = UserDataQuery.find(user_id)
+        return nil unless user.present?
+
+        map_user_data(user)
+      end
+
+      def find_user_by(**)
+        user = UserDataQuery.find_by(**)
+        return nil unless user.present?
+
+        map_user_data(user)
+      end
+
+      def find_all_users = UserDataQuery.all.map { map_user_data(_1) }
+
+      def passcode_exists?(name:, street:, zip:, city:, country:, passcode:)
+        Passcode.exists?(name:, street:, zip:, city:, country:, passcode:)
+      end
+
+      private
+
+      def map_user_data(user)
+        user.person.present? ? create_user_data(user) : create_default_user_data(user)
+      end
+
+      def create_user_data(user)
+        person = user.person
+        address = user.person.address
+
+        UserData.new(id: user.id,
+                     email: user.email,
+                     admin?: user.admin?,
+                     name: person.name,
+                     street: address.street,
+                     zip: address.zip,
+                     city: address.city,
+                     country: address.country)
+      end
+
+      def create_default_user_data(user)
+        DefaultUserData.new(id: user.id,
+                            email: user.email,
+                            admin?: user.admin?)
       end
     end
   end

@@ -4,28 +4,35 @@ module Admin
   class ProfileController < Common::ApplicationController
     def show(user_id:)
       @user = User.find(user_id)
+      @user = Repository.find_user(user_id)
 
       render(ProfileView)
     end
 
     def change_name_to(user_id:, name:)
-      @user = User.find(user_id)
-
-      @user.person.name = name
-      @user.save
-
-      render(ProfileView)
+      change_user(user_id) do |user|
+        user.person.name = name
+      end
     end
 
     def change_address_to(user_id:, street:, zip:, city:, country:)
-      @user = User.find(user_id)
+      change_user(user_id) do |user|
+        user.person.address.street = street
+        user.person.address.zip = zip
+        user.person.address.city = city
+        user.person.address.country = country
+      end
+    end
 
-      @user.person.address.street = street
-      @user.person.address.zip = zip
-      @user.person.address.city = city
-      @user.person.address.country = country
-      @user.save
+    private
 
+    def change_user(user_id)
+      user = User.find(user_id)
+      yield(user)
+
+      user.save
+
+      @user = Repository.find_user(user_id)
       render(ProfileView)
     end
   end

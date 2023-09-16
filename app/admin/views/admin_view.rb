@@ -6,8 +6,8 @@ module Admin
     def title = 'Administrator dashboard'
 
     def content
-      @users.select { _1.person.present? }.map do |user|
-        "#{user.email}, #{user.person.name}, #{user.person.address.street}, #{user.person.address.zip} #{user.person.address.city}, #{user.person.address.country}"
+      @users.select { _1.respond_to?(:name) }.map do |user|
+        "#{user.email}, #{user.name}, #{user.street}, #{user.zip} #{user.city}, #{user.country}"
       end.join("\n")
     end
 

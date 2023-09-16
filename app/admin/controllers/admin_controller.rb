@@ -3,7 +3,7 @@
 module Admin
   class AdminController < Common::ApplicationController
     def show(*)
-      @users = User.all
+      @users = Repository.find_all_users
       render(AdminView)
     end
 

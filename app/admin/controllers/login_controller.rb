@@ -7,7 +7,7 @@ module Admin
     end
 
     def login(email:, password:)
-      @user = User.find_by(email:, password:)
+      @user = Repository.find_user_by(email:, password:)
       if @user.present?
         redirect(@user)
       else
@@ -22,8 +22,7 @@ module Admin
       @user  = User.new(email:, password:, person:)
 
       if passcode.present?
-        passcode = Passcode.find_by(name:, street:, zip:, city:, country:, passcode: passcode.to_i)
-        if passcode.present?
+        if Repository.passcode_exists?(name:, street:, zip:, city:, country:, passcode: passcode.to_i)
           @user.is_admin = true
           @user.save
         else
