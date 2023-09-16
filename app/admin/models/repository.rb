@@ -8,10 +8,12 @@ module Admin
     UserData = Data.define(:id, :email, :name, :admin?, :street, :zip, :city, :country)
     # A Country with its User-Ids.
     CountryData = Data.define(:user_id, :country)
+    # A User and its attributes history
+    HistoryUserData = Data.define(:email, :history)
     # The Base-Query to fetchint a User with its Person and Address.
-    UserDataQuery = User.includes(person: :address)
+    UserDataQuery = User.includes(person: [:person_attributes, { address: :address_attributes }])
 
-    private_constant :UserData, :DefaultUserData, :UserDataQuery
+    private_constant :UserData, :DefaultUserData, :UserDataQuery, :HistoryUserData
 
     class << self
       def seed_data
@@ -32,10 +34,17 @@ module Admin
         map_user_data(user)
       end
 
-      def find_all_users = UserDataQuery.all.map { map_user_data(_1) }
+      def find_all_users
+        UserDataQuery.where.not(person: nil).all.map do |user|
+          history = build_person_history(user)
+
+          HistoryUserData.new(email: user.email, history:)
+        end
+      end
 
       def find_user_and_country
-        User.joins(person: :address).pluck(:id, 'addresses.country').map do |user_id, country|
+        User.joins(person: { address: :address_attributes })
+            .pluck(:id, 'address_attributes.country').map do |user_id, country|
           CountryData.new(user_id:, country:)
         end
       end
@@ -47,22 +56,49 @@ module Admin
 
       private
 
+      def build_person_history(user)
+        person = user.person
+        person_attributes = person.person_attributes
+        address_attributes = person.address.address_attributes
+
+        change_dates = person_attributes.pluck(:created_at) + address_attributes.pluck(:created_at)
+
+        change_dates.sort.map do |date|
+          person_attrs = select_attributes_for(person_attributes, date)
+          address_attrs = select_attributes_for(address_attributes, date)
+          creat_user_data_from_attrs(user, person_attrs, address_attrs)
+        end.uniq
+      end
+
+      def select_attributes_for(attributes, date)
+        attributes.where('created_at <= ?', date).order(id: :desc).first || attributes.first
+      end
+
       def map_user_data(user)
         user.person.present? ? create_user_data(user) : create_default_user_data(user)
       end
 
       def create_user_data(user)
         person = user.person
-        address = user.person.address
+        person_attributes = person.person_attributes
+        address_attributes = person.address.address_attributes
+        person_attrs = person_attributes.where(valid_from: ..Date.today)
+                                        .order(valid_from: :desc).first
+        address_attrs = address_attributes.where(valid_from: ..Date.today)
+                                          .order(valid_from: :desc).first
 
+        creat_user_data_from_attrs(user, person_attrs, address_attrs)
+      end
+
+      def creat_user_data_from_attrs(user, person_attrs, address_attrs)
         UserData.new(id: user.id,
                      email: user.email,
                      admin?: user.admin?,
-                     name: person.name,
-                     street: address.street,
-                     zip: address.zip,
-                     city: address.city,
-                     country: address.country)
+                     name: person_attrs.name,
+                     street: address_attrs.street,
+                     zip: address_attrs.zip,
+                     city: address_attrs.city,
+                     country: address_attrs.country)
       end
 
       def create_default_user_data(user)

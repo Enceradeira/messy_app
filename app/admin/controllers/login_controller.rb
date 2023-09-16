@@ -43,9 +43,13 @@ module Admin
     def create_user(login:, details:)
       login => {email:, password:}
       details => {name:, street:, city:, zip:, country:}
+      valid_from = Date.today
 
-      address = Address.new(street:, city:, zip:, country:)
-      person = Person.new(name:, address:)
+      address = Address.new
+      address.address_attributes.build(street:, city:, zip:, country:, valid_from:)
+
+      person = Person.new(address:)
+      person.person_attributes.build(name:, valid_from:)
       User.new(email:, password:, person:)
     end
 
